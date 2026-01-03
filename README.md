@@ -121,8 +121,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ***
 
 **👤 Author**: Raghuveer K  
-**📧 Contact**: [your-email]@gmail.com  
-**🌐 Portfolio**: github.com/RaghuveerK  
+**📧 Contact**: raghuveerkudelawork@gmail.com  
+**🌐 Portfolio**: github.com/Raghuveer03
 **🎓 B.Tech Computer Science | SIH 2024 Finalist**
 
 
