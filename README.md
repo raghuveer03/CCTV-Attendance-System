@@ -120,7 +120,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ***
 
-**👤 Author**: Raghuveer K  
+**👤 Author**: Raghuveer K ,deekshith K,sreevalli 
 **📧 Contact**: raghuveerkudelawork@gmail.com  
 **🌐 Portfolio**: github.com/Raghuveer03
 **🎓 B.Tech Computer Science | SIH 2024 Finalist**
