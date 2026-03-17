@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>EduScan — Classroom Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+/* ═══════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════ */
+:root {
+  --white:       #ffffff;
+  --gray-50:     #f9fafb;
+  --gray-100:    #f3f4f6;
+  --gray-200:    #e5e7eb;
+  --gray-300:    #d1d5db;
+  --gray-400:    #9ca3af;
+  --gray-500:    #6b7280;
+  --gray-600:    #4b5563;
+  --gray-700:    #374151;
+  --gray-900:    #111827;
+
+  --blue:        #0071e3;
+  --blue-light:  #e8f0fe;
+  --blue-dark:   #0058b0;
+  --green:       #34c759;
+  --green-light: #e8faf0;
+  --red:         #ff3b30;
+  --red-light:   #fff0ef;
+  --amber:       #ff9500;
+  --amber-light: #fff8ec;
+  --purple:      #5856d6;
+  --purple-light:#f0f0ff;
+
+  --radius-sm:   8px;
+  --radius:      14px;
+  --radius-lg:   20px;
+  --radius-xl:   28px;
+  --radius-pill: 999px;
+
+  --shadow-xs:   0 1px 2px rgba(0,0,0,.05);
+  --shadow-sm:   0 2px 8px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.04);
+  --shadow-md:   0 4px 20px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04);
+  --shadow-lg:   0 12px 40px rgba(0,0,0,.10), 0 4px 12px rgba(0,0,0,.05);
+  --shadow-xl:   0 24px 60px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.06);
+
+  --font: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: 'DM Serif Display', Georgia, serif;
+
+  --transition: all .22s cubic-bezier(.4,0,.2,1);
+  --spring:     all .35s cubic-bezier(.34,1.56,.64,1);
+}
+
+/* ═══════════════════════════════════════════
+   RESET
+═══════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;-webkit-font-smoothing:antialiased;}
+body{
+  font-family:var(--font);
+  background: var(--gray-50);
+  color:var(--gray-900);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* Subtle noise texture overlay */
+body::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
+  pointer-events:none;
+  z-index:9999;
+  opacity:.4;
+}
+
+/* ═══════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════ */
+.topbar{
+  position:sticky;top:0;z-index:200;
+  background:rgba(255,255,255,.82);
+  backdrop-filter:saturate(180%) blur(20px);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid rgba(0,0,0,.07);
+  height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2.5rem;
+}
+
+.brand{
+  display:flex;align-items:center;gap:10px;
+  text-decoration:none;color:inherit;
+}
+
+.brand-icon{
+  width:30px;height:30px;
+  background:var(--gray-900);
+  border-radius:8px;
+  display:grid;place-items:center;
+  font-size:14px;
+  flex-shrink:0;
+}
+
+.brand-name{
+  font-size:.95rem;
+  font-weight:600;
+  letter-spacing:-.01em;
+  color:var(--gray-900);
+}
+
+.topbar-right{
+  display:flex;align-items:center;gap:16px;
+}
+
+.status-pill{
+  display:flex;align-items:center;gap:6px;
+  background:var(--green-light);
+  color:#1a7a38;
+  font-size:.72rem;
+  font-weight:600;
+  padding:5px 12px;
+  border-radius:var(--radius-pill);
+  letter-spacing:.02em;
+}
+
+.status-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 0 2px rgba(52,199,89,.3);
+  animation:blink 2s ease infinite;
+}
+
+@keyframes blink{
+  0%,100%{opacity:1;}50%{opacity:.4;}
+}
+
+#topClock{
+  font-size:.8rem;font-weight:500;
+  color:var(--gray-500);
+  letter-spacing:.02em;
+  font-variant-numeric:tabular-nums;
+}
+
+/* ═══════════════════════════════════════════
+   NAV PILLS
+═══════════════════════════════════════════ */
+.nav-wrap{
+  display:flex;justify-content:center;
+  padding:1.75rem 2.5rem .5rem;
+}
+
+.nav-pills{
+  display:flex;gap:4px;
+  background:var(--white);
+  border:1px solid var(--gray-200);
+  border-radius:var(--radius-pill);
+  padding:4px;
+  box-shadow:var(--shadow-sm);
+}
+
+.nav-pill{
+  display:flex;align-items:center;gap:7px;
+  padding:8px 20px;
+  border:none;
+  background:transparent;
+  border-radius:var(--radius-pill);
+  font-family:var(--font);
+  font-size:.82rem;
+  font-weight:500;
+  color:var(--gray-500);
+  cursor:pointer;
+  transition:var(--transition);
+  white-space:nowrap;
+  position:relative;
+}
+
+.nav-pill:hover:not(.active){
+  color:var(--gray-700);
+  background:var(--gray-50);
+}
+
+.nav-pill.active{
+  background:var(--gray-900);
+  color:var(--white);
+  box-shadow:var(--shadow-sm);
+}
+
+.nav-pill-icon{font-size:.95rem;}
+
+.nav-count{
+  background:var(--blue);
+  color:#fff;
+  font-size:.62rem;
+  font-weight:700;
+  padding:1px 6px;
+  border-radius:var(--radius-pill);
+  min-width:18px;
+  text-align:center;
+  line-height:1.6;
+}
+
+.nav-pill.active .nav-count{
+  background:rgba(255,255,255,.25);
+}
+
+/* ═══════════════════════════════════════════
+   MAIN LAYOUT
+═══════════════════════════════════════════ */
+.main{
+  max-width:1080px;
+  margin:0 auto;
+  padding:1.5rem 2.5rem 4rem;
+}
+
+.panel{display:none;}
+.panel.active{
+  display:block;
+  animation:panelIn .4s cubic-bezier(.4,0,.2,1) both;
+}
+
+@keyframes panelIn{
+  from{opacity:0;transform:translateY(12px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+/* ═══════════════════════════════════════════
+   TYPOGRAPHY
+═══════════════════════════════════════════ */
+.page-title{
+  font-family:var(--font-serif);
+  font-size:2rem;
+  font-weight:400;
+  letter-spacing:-.02em;
+  color:var(--gray-900);
+  line-height:1.2;
+  margin-bottom:.4rem;
+}
+
+.page-sub{
+  font-size:.85rem;
+  color:var(--gray-400);
+  font-weight:400;
+  margin-bottom:2rem;
+}
+
+/* ═══════════════════════════════════════════
+   CARD
+═══════════════════════════════════════════ */
+.card{
+  background:var(--white);
+  border:1px solid var(--gray-200);
+  border-radius:var(--radius-xl);
+  padding:1.75rem;
+  box-shadow:var(--shadow-sm);
+  transition:var(--transition);
+}
+
+.card:hover{
+  box-shadow:var(--shadow-md);
+}
+
+.card-label{
+  font-size:.68rem;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--gray-400);
+  margin-bottom:1.1rem;
+}
+
+/* ═══════════════════════════════════════════
+   FORM
+═══════════════════════════════════════════ */
+.field{margin-bottom:1.1rem;}
+
+.field-label{
+  display:block;
+  font-size:.75rem;
+  font-weight:600;
+  color:var(--gray-600);
+  margin-bottom:6px;
+  letter-spacing:.01em;
+}
+
+.field-input{
+  width:100%;
+  background:var(--gray-50);
+  border:1.5px solid var(--gray-200);
+  border-radius:var(--radius);
+  padding:11px 14px;
+  font-family:var(--font);
+  font-size:.9rem;
+  color:var(--gray-900);
+  outline:none;
+  transition:var(--transition);
+}
+
+.field-input:focus{
+  border-color:var(--blue);
+  background:var(--white);
+  box-shadow:0 0 0 3px rgba(0,113,227,.1);
+}
+
+.field-input::placeholder{color:var(--gray-300);}
+
+/* ═══════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:11px 22px;
+  border:none;border-radius:var(--radius-pill);
+  font-family:var(--font);font-size:.85rem;font-weight:600;
+  cursor:pointer;
+  transition:var(--transition);
+  white-space:nowrap;
+  position:relative;overflow:hidden;
+  letter-spacing:.01em;
+}
+
+.btn:active{transform:scale(.97);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+.btn-primary{
+  background:var(--gray-900);
+  color:var(--white);
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
+}
+.btn-primary:hover:not(:disabled){
+  background:#000;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);
+  transform:translateY(-1px);
+}
+
+.btn-blue{
+  background:var(--blue);
+  color:var(--white);
+  box-shadow:0 2px 8px rgba(0,113,227,.3);
+}
+.btn-blue:hover:not(:disabled){
+  background:var(--blue-dark);
+  box-shadow:0 4px 16px rgba(0,113,227,.4);
+  transform:translateY(-1px);
+}
+
+.btn-outline{
+  background:var(--white);
+  border:1.5px solid var(--gray-200);
+  color:var(--gray-700);
+  box-shadow:var(--shadow-xs);
+}
+.btn-outline:hover:not(:disabled){
+  border-color:var(--gray-400);
+  background:var(--gray-50);
+}
+
+.btn-danger{
+  background:var(--red-light);
+  color:var(--red);
+  border:1.5px solid rgba(255,59,48,.15);
+}
+.btn-danger:hover:not(:disabled){background:#ffe5e3;}
+
+.btn-green{
+  background:var(--green);
+  color:#fff;
+  box-shadow:0 2px 8px rgba(52,199,89,.3);
+}
+.btn-green:hover:not(:disabled){
+  background:#2db34a;
+  box-shadow:0 4px 16px rgba(52,199,89,.4);
+  transform:translateY(-1px);
+}
+.btn-green.stop{background:var(--red);box-shadow:0 2px 8px rgba(255,59,48,.3);}
+.btn-green.stop:hover{background:#e0352b;box-shadow:0 4px 16px rgba(255,59,48,.4);}
+
+.btn-full{width:100%;}
+.btn-lg{padding:14px 28px;font-size:.95rem;border-radius:var(--radius-lg);}
+
+/* ═══════════════════════════════════════════
+   TAB 1 — ENROLL
+═══════════════════════════════════════════ */
+.enroll-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1.5rem;
+  align-items:start;
+}
+@media(max-width:720px){.enroll-grid{grid-template-columns:1fr;}}
+
+/* Camera */
+.cam-shell{
+  position:relative;
+  border-radius:var(--radius-xl);
+  overflow:hidden;
+  background:var(--gray-900);
+  aspect-ratio:4/3;
+  box-shadow:var(--shadow-lg);
+}
+
+.cam-shell video,
+.cam-shell canvas{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  object-fit:cover;
+}
+
+.cam-idle{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:10px;
+  color:rgba(255,255,255,.35);
+  font-size:.82rem;
+}
+
+.cam-idle-icon{
+  font-size:2.5rem;opacity:.4;
+  animation:float 3s ease-in-out infinite;
+}
+
+@keyframes float{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-8px);}
+}
+
+/* Focus ring overlay */
+.cam-ring{
+  position:absolute;inset:0;
+  pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
+}
+
+.cam-ring::before{
+  content:'';
+  width:120px;height:120px;
+  border:2px solid rgba(255,255,255,.15);
+  border-radius:50%;
+  box-shadow:0 0 0 1px rgba(255,255,255,.05);
+}
+
+/* Capture flash */
+@keyframes flashOut{from{opacity:.8;}to{opacity:0;}}
+.flash-overlay{
+  position:absolute;inset:0;
+  background:#fff;
+  border-radius:var(--radius-xl);
+  animation:flashOut .35s ease forwards;
+  pointer-events:none;
+  z-index:10;
+}
+
+/* Cam controls */
+.cam-controls{
+  display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;
+}
+
+/* Captured thumb */
+.captured-box{
+  margin-top:12px;
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+  border:1.5px solid var(--gray-200);
+  display:none;
+  box-shadow:var(--shadow-sm);
+}
+.captured-box.show{display:block;}
+.captured-box img{width:100%;display:block;}
+.captured-tag{
+  background:var(--green-light);
+  color:#1a7a38;
+  padding:8px 14px;
+  font-size:.72rem;
+  font-weight:600;
+  display:flex;align-items:center;gap:6px;
+  letter-spacing:.02em;
+}
+
+/* Tips */
+.tips-list{
+  list-style:none;
+  display:flex;flex-direction:column;gap:8px;
+}
+.tips-list li{
+  display:flex;align-items:center;gap:10px;
+  font-size:.82rem;
+  color:var(--gray-500);
+  padding:8px 12px;
+  background:var(--gray-50);
+  border-radius:var(--radius);
+}
+.tips-list li span:first-child{font-size:1rem;}
+
+/* ═══════════════════════════════════════════
+   TAB 2 — ATTENDANCE
+═══════════════════════════════════════════ */
+.attend-grid{
+  display:grid;
+  grid-template-columns:1fr 320px;
+  gap:1.5rem;
+  align-items:start;
+}
+@media(max-width:860px){.attend-grid{grid-template-columns:1fr;}}
+
+.video-shell{
+  position:relative;
+  border-radius:var(--radius-xl);
+  overflow:hidden;
+  background:var(--gray-900);
+  aspect-ratio:16/9;
+  box-shadow:var(--shadow-lg);
+}
+
+#attendanceVideo{
+  width:100%;height:100%;
+  object-fit:cover;
+  display:block;
+  transform:scaleX(-1);
+}
+
+#attendanceCanvas{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  pointer-events:none;
+  transform:scaleX(-1);
+}
+
+/* Scan badge */
+.scan-badge{
+  position:absolute;
+  top:14px;right:14px;
+  background:rgba(0,0,0,.55);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:var(--radius-pill);
+  padding:6px 14px;
+  font-size:.7rem;
+  font-weight:600;
+  color:rgba(255,255,255,.6);
+  display:flex;align-items:center;gap:7px;
+  letter-spacing:.04em;
+}
+.scan-badge.live{color:#34c759;border-color:rgba(52,199,89,.3);}
+.scan-badge.live .badge-dot{background:var(--green);box-shadow:0 0 6px var(--green);}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3);}
+
+/* Face count chip */
+.face-count-chip{
+  position:absolute;
+  bottom:14px;left:14px;
+  background:rgba(0,0,0,.55);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:var(--radius-pill);
+  padding:6px 14px;
+  font-size:.72rem;
+  font-weight:600;
+  color:rgba(255,255,255,.7);
+  letter-spacing:.02em;
+}
+
+.attend-controls{
+  display:flex;gap:8px;margin-top:12px;align-items:center;
+}
+
+.scan-interval-label{
+  margin-left:auto;
+  font-size:.72rem;
+  color:var(--gray-400);
+}
+
+/* Sidebar */
+.sidebar-stack{display:flex;flex-direction:column;gap:12px;}
+
+/* Stat grid */
+.stat-mini-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+}
+
+.stat-mini{
+  background:var(--gray-50);
+  border:1.5px solid var(--gray-100);
+  border-radius:var(--radius-lg);
+  padding:14px;
+  transition:var(--transition);
+}
+
+.stat-mini:hover{background:var(--white);border-color:var(--gray-200);}
+
+.stat-mini-val{
+  font-size:1.6rem;font-weight:700;
+  letter-spacing:-.03em;
+  line-height:1;
+  margin-bottom:4px;
+}
+
+.stat-mini-label{
+  font-size:.68rem;font-weight:500;
+  color:var(--gray-400);
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+
+/* Detected list */
+.detected-feed{
+  display:flex;flex-direction:column;gap:6px;
+  max-height:300px;overflow-y:auto;
+  padding-right:2px;
+}
+
+.detected-feed::-webkit-scrollbar{width:3px;}
+.detected-feed::-webkit-scrollbar-track{background:transparent;}
+.detected-feed::-webkit-scrollbar-thumb{background:var(--gray-200);border-radius:3px;}
+
+.face-row{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;
+  background:var(--gray-50);
+  border:1.5px solid var(--gray-100);
+  border-radius:var(--radius-lg);
+  transition:var(--transition);
+  animation:rowIn .25s ease both;
+}
+
+@keyframes rowIn{
+  from{opacity:0;transform:translateX(-8px);}
+  to{opacity:1;transform:translateX(0);}
+}
+
+.face-row:hover{background:var(--white);border-color:var(--gray-200);}
+.face-row.known{border-left:3px solid var(--green);}
+.face-row.unknown{border-left:3px solid var(--amber);}
+
+.face-row-avatar{
+  width:32px;height:32px;border-radius:50%;
+  display:grid;place-items:center;
+  font-size:.85rem;font-weight:700;
+  flex-shrink:0;
+}
+.face-row-avatar.known{background:var(--green-light);color:#1a7a38;}
+.face-row-avatar.unknown{background:var(--amber-light);color:#7a4a00;}
+
+.face-row-info{flex:1;min-width:0;}
+.face-row-name{font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.face-row-meta{font-size:.68rem;color:var(--gray-400);margin-top:1px;}
+
+.emo-chip{
+  font-size:.62rem;font-weight:600;
+  padding:3px 9px;border-radius:var(--radius-pill);
+  flex-shrink:0;text-transform:capitalize;
+}
+
+/* ═══════════════════════════════════════════
+   TAB 3 — PRESENT
+═══════════════════════════════════════════ */
+.present-header{
+  display:flex;align-items:flex-end;
+  justify-content:space-between;
+  margin-bottom:1.75rem;flex-wrap:wrap;gap:1rem;
+}
+
+/* Big stat cards */
+.stat-cards{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin-bottom:1.5rem;
+}
+@media(max-width:700px){.stat-cards{grid-template-columns:repeat(2,1fr);}}
+
+.stat-card{
+  background:var(--white);
+  border:1.5px solid var(--gray-100);
+  border-radius:var(--radius-xl);
+  padding:1.4rem 1.5rem;
+  transition:var(--transition);
+  position:relative;
+  overflow:hidden;
+}
+
+.stat-card:hover{
+  box-shadow:var(--shadow-md);
+  transform:translateY(-2px);
+}
+
+.stat-card-emoji{font-size:1.5rem;margin-bottom:.6rem;display:block;}
+.stat-card-val{
+  font-size:2.1rem;font-weight:700;
+  letter-spacing:-.04em;line-height:1;
+  margin-bottom:.3rem;
+}
+.stat-card-lbl{
+  font-size:.7rem;font-weight:500;
+  color:var(--gray-400);
+  text-transform:uppercase;letter-spacing:.06em;
+}
+
+/* Shine accent */
+.stat-card::after{
+  content:'';
+  position:absolute;
+  top:-30px;right:-30px;
+  width:80px;height:80px;
+  border-radius:50%;
+  opacity:.06;
+}
+
+/* Table */
+.table-card{
+  background:var(--white);
+  border:1.5px solid var(--gray-200);
+  border-radius:var(--radius-xl);
+  overflow:hidden;
+  box-shadow:var(--shadow-sm);
+}
+
+.table-search-bar{
+  padding:1rem 1.5rem;
+  border-bottom:1px solid var(--gray-100);
+  display:flex;align-items:center;gap:10px;
+}
+
+.table-search-input{
+  flex:1;
+  background:var(--gray-50);
+  border:1.5px solid var(--gray-100);
+  border-radius:var(--radius-pill);
+  padding:8px 16px 8px 36px;
+  font-family:var(--font);
+  font-size:.82rem;color:var(--gray-700);
+  outline:none;
+  transition:var(--transition);
+}
+.table-search-input:focus{
+  border-color:var(--blue);
+  background:var(--white);
+  box-shadow:0 0 0 3px rgba(0,113,227,.08);
+}
+
+.search-icon-wrap{
+  position:relative;display:flex;align-items:center;flex:1;
+}
+.search-icon{
+  position:absolute;left:12px;
+  color:var(--gray-400);font-size:.85rem;
+  pointer-events:none;
+}
+
+table{width:100%;border-collapse:collapse;}
+
+thead{background:var(--gray-50);}
+
+th{
+  padding:11px 18px;
+  text-align:left;
+  font-size:.68rem;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:var(--gray-400);
+  border-bottom:1px solid var(--gray-100);
+  white-space:nowrap;
+}
+
+td{
+  padding:13px 18px;
+  font-size:.85rem;
+  border-bottom:1px solid var(--gray-50);
+  vertical-align:middle;
+}
+
+tbody tr{transition:background .15s;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--gray-50);}
+
+.student-cell{display:flex;align-items:center;gap:10px;}
+
+.ava{
+  width:34px;height:34px;border-radius:50%;
+  display:grid;place-items:center;
+  font-size:.85rem;font-weight:700;
+  flex-shrink:0;
+  background:linear-gradient(135deg,#e8edf5,#d0d8e8);
+  color:var(--gray-600);
+}
+
+.roll-tag{
+  display:inline-block;
+  background:var(--gray-100);
+  color:var(--gray-600);
+  padding:3px 10px;
+  border-radius:var(--radius-pill);
+  font-size:.72rem;font-weight:600;
+}
+
+.emo-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 12px;border-radius:var(--radius-pill);
+  font-size:.72rem;font-weight:600;text-transform:capitalize;
+}
+
+/* Attention bar */
+.attn-wrap{display:flex;align-items:center;gap:8px;}
+.attn-track{
+  flex:1;height:5px;
+  background:var(--gray-100);
+  border-radius:5px;overflow:hidden;
+  min-width:70px;
+}
+.attn-fill{height:100%;border-radius:5px;transition:width .8s cubic-bezier(.4,0,.2,1);}
+.attn-pct{font-size:.7rem;font-weight:600;color:var(--gray-500);width:32px;text-align:right;flex-shrink:0;}
+
+/* Empty state */
+.empty{
+  display:flex;flex-direction:column;align-items:center;
+  padding:4rem 2rem;gap:12px;color:var(--gray-400);
+}
+.empty-emoji{font-size:2.8rem;opacity:.35;}
+.empty-title{font-weight:600;font-size:.9rem;color:var(--gray-500);}
+.empty-desc{font-size:.8rem;text-align:center;max-width:260px;line-height:1.6;}
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+.toast-tray{
+  position:fixed;top:70px;right:20px;
+  z-index:9000;
+  display:flex;flex-direction:column;gap:8px;
+  pointer-events:none;
+}
+
+.toast{
+  background:var(--white);
+  border:1px solid var(--gray-200);
+  border-radius:var(--radius-lg);
+  padding:12px 16px;
+  display:flex;align-items:flex-start;gap:10px;
+  min-width:260px;max-width:360px;
+  pointer-events:all;
+  box-shadow:var(--shadow-lg);
+  animation:toastIn .3s cubic-bezier(.34,1.56,.64,1);
+  font-size:.82rem;line-height:1.4;
+}
+
+@keyframes toastIn{
+  from{opacity:0;transform:translateX(16px) scale(.96);}
+  to{opacity:1;transform:translateX(0) scale(1);}
+}
+
+.toast.success{border-left:3px solid var(--green);}
+.toast.error  {border-left:3px solid var(--red);}
+.toast.info   {border-left:3px solid var(--blue);}
+
+/* ═══════════════════════════════════════════
+   LOADING
+═══════════════════════════════════════════ */
+.loading-veil{
+  position:fixed;inset:0;
+  background:rgba(255,255,255,.72);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  display:none;place-items:center;
+  z-index:8000;
+}
+.loading-veil.show{display:grid;}
+
+.loading-box{
+  background:var(--white);
+  border:1px solid var(--gray-200);
+  border-radius:var(--radius-xl);
+  padding:2.5rem 3rem;
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+  box-shadow:var(--shadow-xl);
+}
+
+.spinner{
+  width:36px;height:36px;
+  border:3px solid var(--gray-100);
+  border-top-color:var(--gray-900);
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.loading-text{
+  font-size:.85rem;color:var(--gray-500);font-weight:500;
+}
+
+/* ═══════════════════════════════════════════
+   DIVIDER
+═══════════════════════════════════════════ */
+.sep{border:none;border-top:1px solid var(--gray-100);margin:1.25rem 0;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--gray-200);border-radius:5px;}
+::-webkit-scrollbar-thumb:hover{background:var(--gray-300);}
+</style>
+</head>
+<body>
+
+<!-- ════════ TOP BAR ════════ -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-icon">🎓</div>
+    <span class="brand-name">EduScan</span>
+  </div>
+  <div class="topbar-right">
+    <div class="status-pill"><div class="status-dot"></div>System Online</div>
+    <span id="topClock">--:--:--</span>
+  </div>
+</header>
+
+<!-- ════════ NAV ════════ -->
+<div class="nav-wrap">
+  <div class="nav-pills">
+    <button class="nav-pill active" data-tab="enroll">
+      <span class="nav-pill-icon">👤</span> Enroll Student
+    </button>
+    <button class="nav-pill" data-tab="attendance">
+      <span class="nav-pill-icon">📡</span> Mark Attendance
+    </button>
+    <button class="nav-pill" data-tab="present">
+      <span class="nav-pill-icon">📊</span> Present Students
+      <span class="nav-count" id="presentCount">0</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════════ MAIN ════════ -->
+<div class="main">
+
+  <!-- ── ENROLL ── -->
+  <div class="panel active" id="panel-enroll">
+    <h1 class="page-title">Enroll a Student</h1>
+    <p class="page-sub">Capture a clear face photo and enter student details to register them.</p>
+
+    <div class="enroll-grid">
+      <!-- Camera -->
+      <div>
+        <div class="cam-shell" id="enrollCamShell">
+          <video id="enrollVideo" autoplay muted playsinline style="display:none;"></video>
+          <canvas id="enrollCanvas" style="display:none;"></canvas>
+          <div class="cam-ring"></div>
+          <div class="cam-idle" id="camIdle">
+            <div class="cam-idle-icon">📷</div>
+            <span>Camera not started</span>
+          </div>
+        </div>
+
+        <div class="cam-controls">
+          <button class="btn btn-outline" id="startCamBtn">▶ Start Camera</button>
+          <button class="btn btn-blue" id="captureBtn" disabled>⊙ Capture Photo</button>
+          <button class="btn btn-outline" id="retakeBtn" style="display:none;">↺ Retake</button>
+        </div>
+
+        <div class="captured-box" id="capturedBox">
+          <img id="capturedImg" src="" alt="Captured"/>
+          <div class="captured-tag">✅ &nbsp;Photo captured — ready to enroll</div>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="card">
+          <div class="card-label">Student Information</div>
+
+          <div class="field">
+            <label class="field-label" for="sName">Full Name *</label>
+            <input class="field-input" id="sName" type="text" placeholder="e.g. Ravi Kumar" autocomplete="off"/>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="sRoll">Roll Number</label>
+            <input class="field-input" id="sRoll" type="text" placeholder="e.g. CS2024001" autocomplete="off"/>
+          </div>
+
+          <hr class="sep"/>
+          <button class="btn btn-primary btn-full btn-lg" id="enrollBtn" disabled>
+            Enroll Student →
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-label">Tips for best recognition</div>
+          <ul class="tips-list">
+            <li><span>👁</span><span>Look directly at the camera</span></li>
+            <li><span>💡</span><span>Ensure good, even lighting</span></li>
+            <li><span>📏</span><span>Face should fill about half the frame</span></li>
+            <li><span>😐</span><span>Keep a neutral expression</span></li>
+            <li><span>🚫</span><span>Remove sunglasses or hats</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ATTENDANCE ── -->
+  <div class="panel" id="panel-attendance">
+    <h1 class="page-title">Mark Attendance</h1>
+    <p class="page-sub">Live face recognition with real-time behaviour analysis.</p>
+
+    <div class="attend-grid">
+      <!-- Video -->
+      <div>
+        <div class="video-shell">
+          <video id="attendanceVideo" autoplay muted playsinline></video>
+          <canvas id="attendanceCanvas"></canvas>
+          <div class="scan-badge" id="scanBadge">
+            <div class="badge-dot"></div>
+            <span id="scanBadgeText">IDLE</span>
+          </div>
+          <div class="face-count-chip" id="faceCountChip" style="display:none;">
+            0 faces detected
+          </div>
+        </div>
+        <div class="attend-controls">
+          <button class="btn btn-outline" id="attendCamBtn">📷 Camera</button>
+          <button class="btn btn-green btn-lg" id="scanBtn">▶ Start Scanning</button>
+          <span class="scan-interval-label">Scans every 1.5s</span>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="sidebar-stack">
+        <div class="card">
+          <div class="card-label">Session Stats</div>
+          <div class="stat-mini-grid">
+            <div class="stat-mini">
+              <div class="stat-mini-val" id="sFaces" style="color:var(--blue);">0</div>
+              <div class="stat-mini-label">Detected</div>
+            </div>
+            <div class="stat-mini">
+              <div class="stat-mini-val" id="sKnown" style="color:var(--green);">0</div>
+              <div class="stat-mini-label">Identified</div>
+            </div>
+            <div class="stat-mini">
+              <div class="stat-mini-val" id="sUnknown" style="color:var(--amber);">0</div>
+              <div class="stat-mini-label">Unknown</div>
+            </div>
+            <div class="stat-mini">
+              <div class="stat-mini-val" id="sScans">0</div>
+              <div class="stat-mini-label">Scans</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="flex:1;">
+          <div class="card-label">Faces in Frame</div>
+          <div class="detected-feed" id="detectedFeed">
+            <div class="empty" style="padding:1.5rem 0;">
+              <div class="empty-emoji">👁</div>
+              <div class="empty-desc" style="font-size:.75rem;">Start scanning to detect faces.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PRESENT ── -->
+  <div class="panel" id="panel-present">
+    <div class="present-header">
+      <div>
+        <h1 class="page-title">Today's Attendance</h1>
+        <p class="page-sub" id="todayLabel" style="margin-bottom:0;">Loading...</p>
+      </div>
+      <button class="btn btn-outline" id="refreshBtn">↻ Refresh</button>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="stat-cards">
+      <div class="stat-card">
+        <span class="stat-card-emoji">👥</span>
+        <div class="stat-card-val" id="scPresent" style="color:var(--blue);">—</div>
+        <div class="stat-card-lbl">Present</div>
+        <div style="position:absolute;top:-30px;right:-30px;width:80px;height:80px;border-radius:50%;background:var(--blue);opacity:.05;"></div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card-emoji">😊</span>
+        <div class="stat-card-val" id="scEngaged" style="color:var(--green);">—</div>
+        <div class="stat-card-lbl">Engaged</div>
+        <div style="position:absolute;top:-30px;right:-30px;width:80px;height:80px;border-radius:50%;background:var(--green);opacity:.05;"></div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card-emoji">🧠</span>
+        <div class="stat-card-val" id="scAvgAttn">—</div>
+        <div class="stat-card-lbl">Avg Attention</div>
+        <div style="position:absolute;top:-30px;right:-30px;width:80px;height:80px;border-radius:50%;background:var(--purple);opacity:.05;"></div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card-emoji">⚠️</span>
+        <div class="stat-card-val" id="scNeeds" style="color:var(--amber);">—</div>
+        <div class="stat-card-lbl">Need Attention</div>
+        <div style="position:absolute;top:-30px;right:-30px;width:80px;height:80px;border-radius:50%;background:var(--amber);opacity:.05;"></div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <div class="table-search-bar">
+        <div class="search-icon-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="table-search-input" id="searchInput" type="text" placeholder="Search students..."/>
+        </div>
+      </div>
+      <div id="tableWrap">
+        <div class="empty" id="emptyState">
+          <div class="empty-emoji">📋</div>
+          <div class="empty-title">No records yet</div>
+          <div class="empty-desc">Go to Mark Attendance and start scanning to record student presence today.</div>
+        </div>
+        <table id="attendTable" style="display:none;">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Student</th>
+              <th>Roll No.</th>
+              <th>Time In</th>
+              <th>Behaviour</th>
+              <th>Attention</th>
+            </tr>
+          </thead>
+          <tbody id="attendTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ════════ TOASTS ════════ -->
+<div class="toast-tray" id="toastTray"></div>
+
+<!-- ════════ LOADING ════════ -->
+<div class="loading-veil" id="loadingVeil">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingMsg">Processing…</div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════
+const API = '';
+
+// Clock
+function tick(){
+  document.getElementById('topClock').textContent =
+    new Date().toLocaleTimeString('en-IN',{hour12:false});
+}
+setInterval(tick,1000); tick();
+
+// Toast
+function toast(msg, type='info', ms=4000){
+  const icons={success:'✅',error:'❌',info:'ℹ️'};
+  const tray=document.getElementById('toastTray');
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.innerHTML=`<span style="font-size:1rem;flex-shrink:0">${icons[type]}</span><span>${msg}</span>`;
+  tray.appendChild(el);
+  setTimeout(()=>{
+    el.style.transition='all .25s';
+    el.style.opacity='0';
+    el.style.transform='translateX(12px)';
+    setTimeout(()=>el.remove(),250);
+  },ms);
+}
+
+// Loading
+function showLoad(t='Processing…'){
+  document.getElementById('loadingMsg').textContent=t;
+  document.getElementById('loadingVeil').classList.add('show');
+}
+function hideLoad(){ document.getElementById('loadingVeil').classList.remove('show'); }
+
+// Tabs
+document.querySelectorAll('.nav-pill').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const tab=btn.dataset.tab;
+    document.querySelectorAll('.nav-pill').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`panel-${tab}`).classList.add('active');
+    if(tab==='present') loadPresent();
+  });
+});
+
+// ═══════════════════════════════════════════════
+//  TAB 1 — ENROLL
+// ═══════════════════════════════════════════════
+let enrollStream=null, capturedB64=null;
+const eVideo=document.getElementById('enrollVideo');
+const eCanvas=document.getElementById('enrollCanvas');
+
+document.getElementById('startCamBtn').addEventListener('click',async()=>{
+  try{
+    enrollStream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:'user'}});
+    eVideo.srcObject=enrollStream;
+    eVideo.style.display='block';
+    document.getElementById('camIdle').style.display='none';
+    document.getElementById('captureBtn').disabled=false;
+    document.getElementById('startCamBtn').disabled=true;
+    document.getElementById('startCamBtn').textContent='✓ Camera On';
+  }catch(e){toast('Camera access denied.','error');}
+});
+
+document.getElementById('captureBtn').addEventListener('click',()=>{
+  eCanvas.width=eVideo.videoWidth||640;
+  eCanvas.height=eVideo.videoHeight||480;
+  const ctx=eCanvas.getContext('2d');
+  ctx.translate(eCanvas.width,0); ctx.scale(-1,1);
+  ctx.drawImage(eVideo,0,0);
+  ctx.setTransform(1,0,0,1,0,0);
+  capturedB64=eCanvas.toDataURL('image/jpeg',.92);
+
+  // Flash
+  const f=document.createElement('div');
+  f.className='flash-overlay';
+  document.getElementById('enrollCamShell').appendChild(f);
+  setTimeout(()=>f.remove(),350);
+
+  document.getElementById('capturedImg').src=capturedB64;
+  document.getElementById('capturedBox').classList.add('show');
+  document.getElementById('captureBtn').style.display='none';
+  document.getElementById('retakeBtn').style.display='inline-flex';
+  checkReady();
+});
+
+document.getElementById('retakeBtn').addEventListener('click',()=>{
+  capturedB64=null;
+  document.getElementById('capturedBox').classList.remove('show');
+  document.getElementById('retakeBtn').style.display='none';
+  document.getElementById('captureBtn').style.display='inline-flex';
+  document.getElementById('enrollBtn').disabled=true;
+});
+
+document.getElementById('sName').addEventListener('input',checkReady);
+
+function checkReady(){
+  document.getElementById('enrollBtn').disabled=
+    !(document.getElementById('sName').value.trim() && capturedB64);
+}
+
+document.getElementById('enrollBtn').addEventListener('click',async()=>{
+  const name=document.getElementById('sName').value.trim();
+  const roll=document.getElementById('sRoll').value.trim();
+  if(!name||!capturedB64){toast('Please enter name and capture a photo.','error');return;}
+
+  showLoad('Enrolling student…');
+  document.getElementById('enrollBtn').disabled=true;
+
+  try{
+    const res=await fetch(`${API}/api/register`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,roll_number:roll,image:capturedB64})
+    });
+    const data=await res.json();
+    hideLoad();
+    if(data.success){
+      toast(data.message,'success');
+      document.getElementById('sName').value='';
+      document.getElementById('sRoll').value='';
+      capturedB64=null;
+      document.getElementById('capturedBox').classList.remove('show');
+      document.getElementById('retakeBtn').style.display='none';
+      document.getElementById('captureBtn').style.display='inline-flex';
+      document.getElementById('enrollBtn').disabled=true;
+      updatePresentCount();
+    } else {
+      toast(data.message,'error');
+      document.getElementById('enrollBtn').disabled=false;
+    }
+  }catch(e){
+    hideLoad();
+    toast('Server error. Is Flask running?','error');
+    document.getElementById('enrollBtn').disabled=false;
+  }
+});
+
+// ═══════════════════════════════════════════════
+//  TAB 2 — ATTENDANCE
+// ═══════════════════════════════════════════════
+let attendStream=null, scanning=false, scanTimer=null, scanCount=0;
+const aVideo=document.getElementById('attendanceVideo');
+const aCanvas=document.getElementById('attendanceCanvas');
+
+document.getElementById('attendCamBtn').addEventListener('click',startAttendCam);
+
+async function startAttendCam(){
+  if(attendStream)return;
+  try{
+    attendStream=await navigator.mediaDevices.getUserMedia({video:{width:1280,height:720,facingMode:'user'}});
+    aVideo.srcObject=attendStream;
+    toast('Camera ready. Start scanning!','info',2500);
+  }catch(e){toast('Camera access denied.','error');}
+}
+
+const scanBtn=document.getElementById('scanBtn');
+const scanBadge=document.getElementById('scanBadge');
+
+scanBtn.addEventListener('click',async()=>{
+  if(!attendStream){await startAttendCam();if(!attendStream)return;}
+  if(!scanning){
+    scanning=true;
+    scanBtn.textContent='⏹ Stop Scanning';
+    scanBtn.classList.add('stop');
+    scanBadge.classList.add('live');
+    document.getElementById('scanBadgeText').textContent='LIVE';
+    document.getElementById('faceCountChip').style.display='block';
+    scanTimer=setInterval(doScan,1500);
+    doScan();
+  }else{
+    scanning=false;
+    clearInterval(scanTimer);
+    scanBtn.textContent='▶ Start Scanning';
+    scanBtn.classList.remove('stop');
+    scanBadge.classList.remove('live');
+    document.getElementById('scanBadgeText').textContent='IDLE';
+    document.getElementById('faceCountChip').style.display='none';
+  }
+});
+
+const EMO_ICONS={'happy':'😊','neutral':'😐','surprise':'😲','sad':'😢','fear':'😨','angry':'😠','disgust':'🤢'};
+const EMO_COLORS={
+  happy:  {bg:'#e8faf0',fg:'#1a7a38'},
+  neutral:{bg:'#eff6ff',fg:'#1d4ed8'},
+  surprise:{bg:'#f3e8ff',fg:'#6d28d9'},
+  sad:    {bg:'#fff8ec',fg:'#92400e'},
+  fear:   {bg:'#fff7ed',fg:'#9a3412'},
+  angry:  {bg:'#fff0ef',fg:'#b91c1c'},
+  disgust:{bg:'#fdf2f8',fg:'#9d174d'},
+};
+
+async function doScan(){
+  if(!attendStream)return;
+  const vw=aVideo.videoWidth||1280, vh=aVideo.videoHeight||720;
+  aCanvas.width=vw; aCanvas.height=vh;
+  const ctx=aCanvas.getContext('2d');
+  ctx.translate(vw,0); ctx.scale(-1,1);
+  ctx.drawImage(aVideo,0,0,vw,vh);
+  ctx.setTransform(1,0,0,1,0,0);
+  const b64=aCanvas.toDataURL('image/jpeg',.72);
+
+  try{
+    const res=await fetch(`${API}/api/detect`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({image:b64})
+    });
+    const data=await res.json();
+    if(data.success){
+      scanCount++;
+      document.getElementById('sScans').textContent=scanCount;
+      renderFaces(data.faces,ctx,vw,vh);
+      updatePresentCount();
+    }
+  }catch(e){}
+}
+
+function renderFaces(faces,ctx,vw,vh){
+  ctx.clearRect(0,0,vw,vh);
+  ctx.drawImage(aVideo,0,0,vw,vh);
+
+  const known=faces.filter(f=>f.student_id).length;
+  document.getElementById('sFaces').textContent=faces.length;
+  document.getElementById('sKnown').textContent=known;
+  document.getElementById('sUnknown').textContent=faces.length-known;
+  document.getElementById('faceCountChip').textContent=`${faces.length} face${faces.length!==1?'s':''} detected`;
+
+  faces.forEach(f=>{
+    const{top,right,bottom,left}=f.bbox;
+    const w=right-left, h=bottom-top;
+    const col=f.student_id?'#34c759':'#ff9500';
+
+    // Rounded rect
+    ctx.strokeStyle=col;
+    ctx.lineWidth=2;
+    ctx.shadowColor=col;
+    ctx.shadowBlur=12;
+    roundRect(ctx,left,top,w,h,8);
+    ctx.stroke();
+    ctx.shadowBlur=0;
+
+    // Label pill
+    const lbl=`${f.name}  ${EMO_ICONS[f.emotion]||'😐'}`;
+    ctx.font='600 12px "DM Sans", sans-serif';
+    const tw=ctx.measureText(lbl).width;
+    const pw=tw+20, ph=24, px=left, py=top-ph-4;
+
+    ctx.fillStyle=col;
+    roundRect(ctx,px,py,pw,ph,6);
+    ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.fillText(lbl,px+10,py+16);
+  });
+
+  // Sidebar
+  const feed=document.getElementById('detectedFeed');
+  if(faces.length===0){
+    feed.innerHTML=`<div class="empty" style="padding:1.5rem 0;"><div class="empty-emoji">👁</div><div class="empty-desc" style="font-size:.75rem;">No faces in current frame.</div></div>`;
+    return;
+  }
+  feed.innerHTML='';
+  faces.forEach(f=>{
+    const isKnown=!!f.student_id;
+    const ec=EMO_COLORS[f.emotion]||{bg:'#f3f4f6',fg:'#374151'};
+    const div=document.createElement('div');
+    div.className=`face-row ${isKnown?'known':'unknown'}`;
+    div.innerHTML=`
+      <div class="face-row-avatar ${isKnown?'known':'unknown'}">${isKnown?f.name.charAt(0).toUpperCase():'?'}</div>
+      <div class="face-row-info">
+        <div class="face-row-name">${f.name}</div>
+        <div class="face-row-meta">${EMO_ICONS[f.emotion]||'😐'} ${f.attention_label||'Detecting'} · ${f.attention_score||0}%</div>
+      </div>
+      <span class="emo-chip" style="background:${ec.bg};color:${ec.fg};">${f.emotion||'neutral'}</span>`;
+    feed.appendChild(div);
+  });
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+}
+
+// ═══════════════════════════════════════════════
+//  TAB 3 — PRESENT
+// ═══════════════════════════════════════════════
+let allRows=[];
+
+async function loadPresent(){
+  try{
+    const res=await fetch(`${API}/api/attendance/today`);
+    const data=await res.json();
+
+    document.getElementById('todayLabel').textContent=
+      data.date ? new Date(data.date+'T00:00').toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'}) : 'Today';
+
+    allRows=data.students||[];
+    const total=allRows.length;
+    const engaged=allRows.filter(s=>['happy','surprise'].includes(s.emotion)).length;
+    const needs=allRows.filter(s=>['sad','fear','angry','disgust'].includes(s.emotion)).length;
+    const avgAttn=total>0?Math.round(allRows.reduce((s,r)=>s+(r.attention_score||70),0)/total):0;
+
+    document.getElementById('scPresent').textContent=total;
+    document.getElementById('scEngaged').textContent=engaged;
+    document.getElementById('scAvgAttn').textContent=total>0?avgAttn+'%':'—';
+    document.getElementById('scNeeds').textContent=needs;
+    document.getElementById('presentCount').textContent=total;
+
+    renderTable(allRows);
+  }catch(e){toast('Cannot load attendance data.','error');}
+}
+
+function renderTable(rows){
+  if(rows.length===0){
+    document.getElementById('emptyState').style.display='';
+    document.getElementById('attendTable').style.display='none';
+    return;
+  }
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('attendTable').style.display='';
+  const tbody=document.getElementById('attendTbody');
+  tbody.innerHTML='';
+
+  rows.forEach((s,i)=>{
+    const ec=EMO_COLORS[s.emotion]||{bg:'#f3f4f6',fg:'#374151'};
+    const attn=s.attention_score||70;
+    const initials=s.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const emoColor=getEmoColor(s.emotion);
+
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td style="color:var(--gray-400);font-size:.78rem;font-weight:600;">${String(i+1).padStart(2,'0')}</td>
+      <td>
+        <div class="student-cell">
+          <div class="ava">${initials}</div>
+          <span style="font-weight:600;">${s.name}</span>
+        </div>
+      </td>
+      <td><span class="roll-tag">${s.roll_number||'—'}</span></td>
+      <td style="color:var(--gray-500);font-variant-numeric:tabular-nums;font-size:.8rem;">${s.time||'—'}</td>
+      <td>
+        <span class="emo-badge" style="background:${ec.bg};color:${ec.fg};">
+          ${EMO_ICONS[s.emotion]||'😐'} ${s.emotion||'neutral'}
+        </span>
+      </td>
+      <td>
+        <div class="attn-wrap">
+          <div class="attn-track">
+            <div class="attn-fill" style="width:${attn}%;background:${emoColor};"></div>
+          </div>
+          <span class="attn-pct">${attn}%</span>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function getEmoColor(e){
+  const m={happy:'#34c759',neutral:'#3b82f6',surprise:'#8b5cf6',sad:'#f59e0b',fear:'#f97316',angry:'#ef4444',disgust:'#ec4899'};
+  return m[e]||'#9ca3af';
+}
+
+// Search
+document.getElementById('searchInput').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  renderTable(allRows.filter(s=>s.name.toLowerCase().includes(q)||(s.roll_number||'').toLowerCase().includes(q)));
+});
+
+document.getElementById('refreshBtn').addEventListener('click',()=>{loadPresent();toast('Refreshed!','info',2000);});
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+async function updatePresentCount(){
+  try{
+    const res=await fetch(`${API}/api/attendance/today`);
+    const data=await res.json();
+    document.getElementById('presentCount').textContent=data.count||0;
+  }catch(e){}
+}
+
+(async()=>{
+  updatePresentCount();
+  try{
+    const res=await fetch(`${API}/api/status`);
+    const data=await res.json();
+    if(!data.deepface)
+      toast('DeepFace not installed — run: pip install deepface tf-keras','error',8000);
+  }catch(e){
+    toast('Cannot reach server at localhost:5000','error',8000);
+  }
+})();
+</script>
+</body>
+</html>

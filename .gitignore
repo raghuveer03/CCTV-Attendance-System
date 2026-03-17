@@ -1,0 +1,33 @@
+# python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# virtual env
+venv/
+env/
+.venv/
+
+# dont commit student face photos or db
+attendance.db
+known_faces/*.jpg
+known_faces/*.jpeg
+known_faces/*.png
+_scan_tmp.jpg
+_tmp.jpg
+
+# deepface downloads models here, no need to commit
+.deepface/
+
+# editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# misc
+*.log
+pip-log.txt
