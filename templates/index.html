@@ -1290,7 +1290,7 @@ document.getElementById('enrollBtn').addEventListener('click',async()=>{
 // ═══════════════════════════════════════════════
 //  TAB 2 — ATTENDANCE
 // ═══════════════════════════════════════════════
-let attendStream=null, scanning=false, scanTimer=null, scanCount=0;
+let attendStream=null, scanning=false, scanTimer=null, scanCount=0, scanInProgress=false;
 const aVideo=document.getElementById('attendanceVideo');
 const aCanvas=document.getElementById('attendanceCanvas');
 
@@ -1342,10 +1342,13 @@ const EMO_COLORS={
 };
 
 async function doScan(){
-  if(!attendStream)return;
+  if(!attendStream||scanInProgress)return;
+  scanInProgress=true;
   const vw=aVideo.videoWidth||1280, vh=aVideo.videoHeight||720;
   aCanvas.width=vw; aCanvas.height=vh;
   const ctx=aCanvas.getContext('2d');
+  // Draw mirrored frame for display; send the same mirrored image to backend
+  // so that bounding boxes returned by the server line up with what is shown
   ctx.translate(vw,0); ctx.scale(-1,1);
   ctx.drawImage(aVideo,0,0,vw,vh);
   ctx.setTransform(1,0,0,1,0,0);
@@ -1365,11 +1368,16 @@ async function doScan(){
       updatePresentCount();
     }
   }catch(e){}
+  finally{ scanInProgress=false; }
 }
 
 function renderFaces(faces,ctx,vw,vh){
+  // The canvas already holds the mirrored captured frame.
+  // Redraw it from the canvas's own ImageData so the bbox overlay
+  // stays aligned with the same (mirrored) image the server analysed.
+  const snapshot=ctx.getImageData(0,0,vw,vh);
   ctx.clearRect(0,0,vw,vh);
-  ctx.drawImage(aVideo,0,0,vw,vh);
+  ctx.putImageData(snapshot,0,0);
 
   const known=faces.filter(f=>f.student_id).length;
   document.getElementById('sFaces').textContent=faces.length;
