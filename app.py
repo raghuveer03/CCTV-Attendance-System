@@ -9,6 +9,7 @@ import numpy as np
 import sqlite3
 import base64
 import os
+import uuid
 import cv2
 from datetime import datetime, date
 
@@ -79,11 +80,15 @@ def get_db():
 def decode_b64_image(b64_str):
     # webcam sends base64 with a prefix like "data:image/jpeg;base64,..."
     # need to strip that before decoding
-    if ',' in b64_str:
-        b64_str = b64_str.split(',')[1]
-    raw = base64.b64decode(b64_str)
-    arr = np.frombuffer(raw, np.uint8)
-    return cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    try:
+        if ',' in b64_str:
+            b64_str = b64_str.split(',')[1]
+        raw = base64.b64decode(b64_str)
+        arr = np.frombuffer(raw, np.uint8)
+        img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+        return img  # may still be None if the bytes aren't a valid image
+    except Exception:
+        return None
 
 
 # spent way too long debugging a json error - numpy int32 isnt serializable
@@ -119,6 +124,8 @@ def get_emotion_data(emo):
 
 
 def detect_faces_in_frame(img):
+    if img is None or img.size == 0:
+        return []
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # these scaleFactor and minNeighbors values worked best after some trial and error
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(60, 60))
@@ -146,6 +153,8 @@ def status():
 @app.route('/api/register', methods=['POST'])
 def register_student():
     data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'message': 'Invalid request.'})
     name = data.get('name', '').strip()
     roll = data.get('roll_number', '').strip()
     img_b64 = data.get('image', '')
@@ -156,6 +165,8 @@ def register_student():
         return jsonify({'success': False, 'message': 'No photo received.'})
 
     img = decode_b64_image(img_b64)
+    if img is None:
+        return jsonify({'success': False, 'message': 'Could not decode the image. Please try again.'})
     faces = detect_faces_in_frame(img)
 
     if not faces:
@@ -194,11 +205,15 @@ def register_student():
 @app.route('/api/detect', methods=['POST'])
 def detect_and_mark():
     data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'faces': []})
     img_b64 = data.get('image', '')
     if not img_b64:
         return jsonify({'success': False, 'faces': []})
 
     img = decode_b64_image(img_b64)
+    if img is None:
+        return jsonify({'success': False, 'faces': []})
     today = date.today().isoformat()
     now_time = datetime.now().strftime('%H:%M:%S')
 
@@ -220,34 +235,35 @@ def detect_and_mark():
 
         # face matching using deepface verify
         # compares live face against each saved student photo
-        # TODO: cache the model so it doesnt reload every scan
+        # use a unique temp path per request to avoid race conditions
         if DEEPFACE_OK and len(all_students) > 0:
-            tmp_path = '_scan_tmp.jpg'
+            tmp_path = f'_scan_tmp_{uuid.uuid4().hex}.jpg'
             cv2.imwrite(tmp_path, face_crop)
             best_dist = 999.0
 
-            for s in all_students:
-                if not s['photo_path'] or not os.path.exists(s['photo_path']):
-                    continue
-                try:
-                    check = DeepFace.verify(
-                        img1_path=tmp_path,
-                        img2_path=s['photo_path'],
-                        model_name='Facenet',
-                        enforce_detection=False,
-                        silent=True
-                    )
-                    dist = float(check.get('distance', 999))
-                    if check.get('verified') and dist < best_dist:
-                        best_dist = dist
-                        matched_id = int(s['id'])
-                        matched_name = str(s['name'])
-                except Exception:
-                    # silently skip if deepface throws on a particular image
-                    pass
-
-            if os.path.exists(tmp_path):
-                os.remove(tmp_path)
+            try:
+                for s in all_students:
+                    if not s['photo_path'] or not os.path.exists(s['photo_path']):
+                        continue
+                    try:
+                        check = DeepFace.verify(
+                            img1_path=tmp_path,
+                            img2_path=s['photo_path'],
+                            model_name='Facenet',
+                            enforce_detection=False,
+                            silent=True
+                        )
+                        dist = float(check.get('distance', 999))
+                        if check.get('verified') and dist < best_dist:
+                            best_dist = dist
+                            matched_id = int(s['id'])
+                            matched_name = str(s['name'])
+                    except Exception:
+                        # silently skip if deepface throws on a particular image
+                        pass
+            finally:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
 
         # get emotion from face crop
         if DEEPFACE_OK:
@@ -351,4 +367,5 @@ if __name__ == '__main__':
     print('opencv:', 'ready')
     print('url: http://localhost:5000')
     print()
-    app.run(debug=True, port=5000)
+    debug_mode = os.environ.get('FLASK_DEBUG', '0') == '1'
+    app.run(debug=debug_mode, port=5000)
